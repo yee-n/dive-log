@@ -1,0 +1,9 @@
+
+{
+  "name": "DiveLog - Freediving Record",
+  "description": "A comprehensive freediving log application to record STA, DYN, FIM, and CWT sessions, track Personal Bests, and manage dive media.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
