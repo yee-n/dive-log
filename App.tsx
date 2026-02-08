@@ -6,7 +6,7 @@ import { formatTime, calculateOverallPB, calculateSessionPB, fileToBase64 } from
 
 // Constants for Google Drive
 const DRIVE_FOLDER_ID = '1Kcx0f-fqKsnYzof58Gg5gMZfKaeg4e_x';
-const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // User needs to provide this for real functionality
+const CLIENT_ID = '229707401391-cfovrjr2ecse3vk4jv613pkgi3mmmn0a.apps.googleusercontent.com'; 
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 // Components
@@ -130,9 +130,7 @@ export default function App() {
 
     // Initialize Google Identity Services
     const initGis = () => {
-      // FIX: Cast window to any to access 'google' global object from GIS script
       if ((window as any).google) {
-        // FIX: Cast window to any to access 'google' global object from GIS script
         tokenClientRef.current = (window as any).google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
@@ -146,7 +144,6 @@ export default function App() {
     };
     
     const checkGis = setInterval(() => {
-        // FIX: Cast window to any to access 'google' global object from GIS script
         if ((window as any).google) {
             initGis();
             clearInterval(checkGis);
