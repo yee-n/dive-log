@@ -6,11 +6,19 @@ export enum Discipline {
   CWT = 'CWT'
 }
 
+export interface User {
+  id: string;
+  name: string;
+  password?: string;
+  avatar?: string;
+}
+
 export interface MediaFile {
   id: string;
   type: 'image' | 'video';
   url: string; // Base64 (local) or Google Drive URL
-  driveFileId?: string; // ID of the file in Google Drive
+  driveFileId?: string;
+  thumbnailUrl?: string; // Google Drive Thumbnail Link
 }
 
 export interface DiveEntry {
@@ -27,6 +35,8 @@ export interface DiveEntry {
 
 export interface DiveSession {
   id: string;
+  ownerId: string;
+  ownerName: string;
   date: string;
   location: string;
   buddy: string;

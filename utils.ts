@@ -2,10 +2,33 @@
 import { Discipline, DiveSession, DiveEntry, PersonalBest } from './types';
 
 export const formatTime = (seconds?: number): string => {
-  if (seconds === undefined) return '--:--';
+  if (seconds === undefined || seconds === 0) return '--:--';
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+/**
+ * 숫자 입력을 초 단위로 변환합니다.
+ * 130 -> 1분 30초 (90초)
+ * 52 -> 0분 52초 (52초)
+ * 400 -> 4분 00초 (240초)
+ */
+export const parseSmartTime = (input: string): number => {
+  const clean = input.replace(/[^0-9]/g, '');
+  if (!clean) return 0;
+
+  let mins = 0;
+  let secs = 0;
+
+  if (clean.length <= 2) {
+    secs = parseInt(clean);
+  } else {
+    secs = parseInt(clean.slice(-2));
+    mins = parseInt(clean.slice(0, -2));
+  }
+
+  return (mins * 60) + secs;
 };
 
 export const calculateSessionPB = (entries: DiveEntry[]): Partial<Record<Discipline, string>> => {
@@ -14,25 +37,18 @@ export const calculateSessionPB = (entries: DiveEntry[]): Partial<Record<Discipl
   entries.forEach(entry => {
     if (entry.discipline === Discipline.STA) {
       const current = entry.timeSeconds || 0;
-      const existing = parseInt(pbs[Discipline.STA] || '0');
-      if (current > existing) pbs[Discipline.STA] = current.toString();
+      const existing = parseSmartTime(pbs[Discipline.STA]?.replace(':', '') || '0');
+      if (current > existing) pbs[Discipline.STA] = formatTime(current);
     } else if (entry.discipline === Discipline.DYN) {
       const current = entry.distanceMeters || 0;
       const existing = parseInt(pbs[Discipline.DYN] || '0');
-      if (current > existing) pbs[Discipline.DYN] = current.toString();
+      if (current > existing) pbs[Discipline.DYN] = `${current}m`;
     } else {
-      // FIM, CWT (Depth is priority)
       const current = entry.depthMeters || 0;
       const existing = parseInt(pbs[entry.discipline] || '0');
-      if (current > existing) pbs[entry.discipline] = current.toString();
+      if (current > existing) pbs[entry.discipline] = `${current}m`;
     }
   });
-
-  // Convert raw numbers back to display strings
-  if (pbs[Discipline.STA]) pbs[Discipline.STA] = formatTime(parseInt(pbs[Discipline.STA]!));
-  if (pbs[Discipline.DYN]) pbs[Discipline.DYN] = `${pbs[Discipline.DYN]}m`;
-  if (pbs[Discipline.FIM]) pbs[Discipline.FIM] = `${pbs[Discipline.FIM]}m`;
-  if (pbs[Discipline.CWT]) pbs[Discipline.CWT] = `${pbs[Discipline.CWT]}m`;
 
   return pbs;
 };
