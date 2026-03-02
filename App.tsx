@@ -98,10 +98,15 @@ export default function App() {
         fetch('/api/sessions'),
         fetch('/api/users')
       ]);
-      const [sessionsData, usersData] = await Promise.all([
-        sessionsRes.json(),
-        usersRes.json()
-      ]);
+      
+      if (!sessionsRes.ok || !usersRes.ok) {
+        console.error("Server error during fetch:", sessionsRes.status, usersRes.status);
+        return;
+      }
+
+      const sessionsData = await sessionsRes.json();
+      const usersData = await usersRes.json();
+      
       setSessions(sessionsData);
       setUsers(usersData);
     } catch (e) {
@@ -283,8 +288,14 @@ export default function App() {
         body: JSON.stringify(newSession)
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to create session');
+        let errorMessage = 'Failed to create session';
+        try {
+          const err = await res.json();
+          errorMessage = err.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${res.status}): ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       await fetchData();
       setIsNewSessionModal(false);
@@ -345,8 +356,14 @@ export default function App() {
         body: JSON.stringify(updatedSession)
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to save dive');
+        let errorMessage = 'Failed to save dive';
+        try {
+          const err = await res.json();
+          errorMessage = err.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${res.status}): ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       fetchData();
     } catch (err: any) {

@@ -7,20 +7,26 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://arurnlqxqttymzcyzaxv.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || "sb_publishable_7lITozammTzgAuCMnYqGww_w4U1DiA7";
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("CRITICAL ERROR: SUPABASE_URL or SUPABASE_KEY is missing from environment variables!");
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  console.warn("WARNING: Using fallback Supabase credentials. Please set SUPABASE_URL and SUPABASE_KEY in environment variables.");
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function startServer() {
-  const app = express();
-  const PORT = 3000;
+  try {
+    const app = express();
+    const PORT = 3000;
 
-  app.use(express.json({ limit: '50mb' }));
+    app.use(express.json({ limit: '50mb' }));
+
+    // Health check
+    app.get("/api/health", (req, res) => {
+      res.json({ status: "ok", supabase: !!SUPABASE_URL });
+    });
 
   // API: Get all users
   app.get("/api/users", async (req, res) => {
@@ -151,9 +157,13 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
 }
 
 startServer();
