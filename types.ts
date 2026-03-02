@@ -11,6 +11,10 @@ export interface User {
   name: string;
   password?: string;
   avatar?: string;
+  organization?: string; // AIDA, PADI 등
+  level?: string; // 1, 2, 3, 4, Instructor
+  isTraining?: boolean; // 교육 중 여부
+  spreadsheetId?: string; // Linked Google Spreadsheet ID
 }
 
 export interface MediaFile {
