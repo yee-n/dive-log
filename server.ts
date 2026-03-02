@@ -10,6 +10,10 @@ const __dirname = path.dirname(__filename);
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
 
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("CRITICAL ERROR: SUPABASE_URL or SUPABASE_KEY is missing from environment variables!");
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function startServer() {
@@ -45,6 +49,7 @@ async function startServer() {
   // API: Update/Create user
   app.post("/api/users", async (req, res) => {
     const user = req.body;
+    console.log("Upserting user:", user.id);
     const { data, error } = await supabase
       .from("users")
       .upsert({
@@ -96,6 +101,7 @@ async function startServer() {
   // API: Save session
   app.post("/api/sessions", async (req, res) => {
     const session = req.body;
+    console.log("Saving session:", session.id, "for user:", session.ownerId);
     const { data, error } = await supabase
       .from("sessions")
       .upsert({
@@ -111,7 +117,7 @@ async function startServer() {
 
     if (error) {
       console.error("Error saving session:", error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message, details: error });
     }
     res.json({ success: true });
   });

@@ -87,6 +87,7 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const tokenClientRef = useRef<any>(null);
 
@@ -141,6 +142,12 @@ export default function App() {
   useEffect(() => { 
     if (currentUser) {
       localStorage.setItem('current_user_v3', JSON.stringify(currentUser));
+      // Ensure user exists in Supabase
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentUser)
+      }).catch(err => console.error("Failed to sync user to DB:", err));
     } else {
       localStorage.removeItem('current_user_v3');
     }
@@ -267,15 +274,28 @@ export default function App() {
       note: formData.get('note') as string,
       entries: [],
     };
-    await fetch('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newSession)
-    });
-    fetchData();
-    setIsNewSessionModal(false);
-    setSelectedSessionId(newSession.id);
-    setView('session_detail');
+    
+    setIsCreatingSession(true);
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSession)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create session');
+      }
+      await fetchData();
+      setIsNewSessionModal(false);
+      setSelectedSessionId(newSession.id);
+      setView('session_detail');
+    } catch (err: any) {
+      console.error(err);
+      alert(`세션 생성 실패: ${err.message}`);
+    } finally {
+      setIsCreatingSession(false);
+    }
   };
 
   const handleAddOrUpdateDive = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -318,15 +338,24 @@ export default function App() {
       entries: isDiveModal.entry ? session.entries.map(e => e.id === isDiveModal.entry?.id ? newDive : e) : [...session.entries, newDive] 
     };
 
-    await fetch('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedSession)
-    });
-    fetchData();
-
-    setIsUploading(false);
-    setIsDiveModal({open: false, entry: null});
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSession)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to save dive');
+      }
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`기록 저장 실패: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      setIsDiveModal({open: false, entry: null});
+    }
   };
 
   const mySessions = sessions.filter(s => s.ownerId === currentUser?.id);
@@ -772,7 +801,9 @@ export default function App() {
               </div>
               <div className="flex gap-4 pt-6">
                 <button type="button" onClick={() => setIsNewSessionModal(false)} className="flex-1 font-black text-gray-500 py-5">취소</button>
-                <button type="submit" className="flex-[2] bg-purple-600 font-black text-white py-5 rounded-[24px] shadow-xl shadow-purple-900/40">세션 시작</button>
+                <button type="submit" disabled={isCreatingSession} className="flex-[2] bg-purple-600 font-black text-white py-5 rounded-[24px] shadow-xl shadow-purple-900/40 disabled:opacity-50">
+                  {isCreatingSession ? <Loader2 className="animate-spin mx-auto" size={24}/> : '세션 시작'}
+                </button>
               </div>
             </form>
           </div>
